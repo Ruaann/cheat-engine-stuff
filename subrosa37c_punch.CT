@@ -1,0 +1,435 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="34">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>653</ID>
+      <Description>"Punch"</Description>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>// Alot of the code is from the original punch script
+// Thanks skety for helping fixing problems
+
+// -- Configurations!!!! --
+define(enable_descombulator,1)
+
+define(punch_knockback,3.5)
+define(punch_cooldown,#70)
+define(punch_damage,165.0)
+define(punch_threshold,10.0)
+// ------------------------
+
+// Structs
+define(human0,subrosadedicated.exe+6AC988)
+  define(human_drunkness,78)
+  define(human_inputflag,214)
+  define(human_lastinputflag,218)
+  define(human_bone0,220)
+    define(human_bone_vel,1C)
+	  define(human_bonesize,138)
+  define(human_slot0,32A8)
+  define(human_slot1,32D0)
+  define(human_kickdelay,3520)
+  define(human_punchdelay,3524)
+  define(human_health,3528)
+  define(human_health_torso,3534)
+  define(human_health_head,353C)
+  define(human_health_larm,3544)
+  define(human_health_rarm,354C)
+  define(human_health_lleg,3554)
+  define(human_health_rleg,355C)
+  define(humansize,37D0)
+
+define(reycastresult,subrosadedicated.exe+25B6A520)
+  define(reycastresult_normal,C)
+
+define(rigidbody0,subrosadedicated.exe+C7D84)
+  define(rigidbody_vel,20)
+  define(rigidbodysize,B0)
+
+define(createevent_particle,subrosadedicated.exe+25990)
+
+[ENABLE]
+
+alloc(newmem,$1000)
+
+newmem:
+
+// NOTE: Function calls don't work here, use another alternative like jmps
+collision_check:
+  cmp ebp,6
+  je collision_check_hand
+  cmp ebp,9
+  jne collision_check2
+
+collision_check_hand:
+  push [esp+54] // 54
+  push ebx
+  push [esp+30] // 28
+  push ebp
+
+  jmp collision_check_func
+
+collision_check2:
+  cmp ebx,6
+  je collision_check_hand2
+  cmp ebx,9
+  jne subrosadedicated.exe+8DF2D
+
+collision_check_hand2:
+  push [esp+28] // 28
+  push ebp
+  push [esp+5C] // 54
+  push ebx
+
+  jmp collision_check_func
+
+collision_check_func:
+  push ebp
+  mov ebp,esp
+
+  mov eax,[ebp+10]
+    cmp eax,-1
+    je cleanup
+  imul eax,humansize
+
+  cmp [eax+human0],0
+  je  cleanup
+
+  cmp [eax+human0+human_health],0
+  jle cleanup
+
+  cmp [eax+human0+human_punchdelay],0
+  jne  cleanup
+
+  test [eax+human0+human_inputflag],800
+  je cleanup
+
+  mov ecx,[ebp+4]
+    cmp ecx,-1
+    je  cleanup
+  imul ecx,human_bonesize
+
+  mov esi,[ebp+8]
+    cmp esi,-1
+    je  cleanup
+  imul esi,humansize
+
+  cmp [esi+human0],0
+  je  cleanup
+
+  mov edx,[ebp+C]
+    cmp edx,-1
+    je  cleanup
+  imul edx,human_bonesize
+
+  // Get velocity length
+  fld [eax+human0+ecx+human_bone0+human_bone_vel+0]
+    fsub [esi+human0+edx+human_bone0+human_bone_vel+0]
+    fmul st(0)
+    fld [eax+human0+ecx+human_bone0+human_bone_vel+4]
+      fsub [esi+human0+edx+human_bone0+human_bone_vel+4]
+      fmul st(0)
+      fld [eax+human0+ecx+human_bone0+human_bone_vel+8]
+        fsub [esi+human0+edx+human_bone0+human_bone_vel+8]
+        fmul st(0)
+      faddp
+    faddp
+    fsqrt
+
+  // Make damage based on velocity
+  push (float)punch_damage
+  fmul [esp]
+  fchs // Make negative
+
+  add esp,4
+
+  // Check velocity
+  push (float)-punch_threshold
+  fld [esp]
+  add esp,4
+  fcomip st(1)
+  jb punch_dmg_skip
+
+  mov edx,[eax+human0+ecx+human_bone0]
+  imul edx,rigidbodysize
+
+  mov eax,[ebp+8]
+    cmp eax,-1
+    je  cleanup
+  imul eax,humansize
+
+  cmp [eax+human0],0
+  je  cleanup
+
+  mov ecx,[ebp+C]
+    cmp ecx,-1
+    je  cleanup
+
+  // Check what part to damage
+  cmp ecx,1
+    je punch_dmg_torso
+  cmp ecx,2
+    je punch_dmg_torso
+  cmp ecx,3
+    je punch_dmg_head
+  cmp ecx,4
+    je punch_dmg_larm
+  cmp ecx,5
+    je punch_dmg_larm
+  cmp ecx,6
+    je punch_dmg_larm
+  cmp ecx,7
+    je punch_dmg_rarm
+  cmp ecx,8
+    je punch_dmg_rarm
+  cmp ecx,9
+    je punch_dmg_rarm
+  cmp ecx,#10
+    je punch_dmg_lleg
+  cmp ecx,#11
+    je punch_dmg_lleg
+  cmp ecx,#12
+    je punch_dmg_lleg
+  cmp ecx,#13
+    je punch_dmg_rleg
+  cmp ecx,#14
+    je punch_dmg_rleg
+  cmp ecx,#15
+    je punch_dmg_rleg
+
+// No damage
+punch_no_dmg:
+  fstp st(0)
+  jmp doEffect
+
+punch_dmg_torso:
+  fiadd [eax+human0+human_health_torso]
+  fistp [eax+human0+human_health_torso]
+  jmp doEffect
+
+punch_dmg_head:
+  fld st(0)
+    fadd st(0)
+  fiadd [eax+human0+human_health_head]
+  fistp [eax+human0+human_health_head]
+  fchs // Make positive
+    fadd st(0)
+  fiadd [eax+human0+human_drunkness]
+  fistp [eax+human0+human_drunkness]
+  jmp doEffect
+
+punch_dmg_larm:
+  fiadd [eax+human0+human_health_larm]
+  fistp [eax+human0+human_health_larm]
+  jmp doEffect
+
+punch_dmg_rarm:
+  fiadd [eax+human0+human_health_rarm]
+  fistp [eax+human0+human_health_rarm]
+  jmp doEffect
+
+punch_dmg_lleg:
+  fiadd [eax+human0+human_health_lleg]
+  fistp [eax+human0+human_health_lleg]
+  jmp doEffect
+
+punch_dmg_rleg:
+  fiadd [eax+human0+human_health_rleg]
+  fistp [eax+human0+human_health_rleg]
+  jmp doEffect
+
+doEffect:
+  mov ecx,[ebp+10]
+    cmp ecx,-1
+    je  cleanup
+  imul ecx,humansize
+
+  cmp [ecx+human0],0
+  je  cleanup
+
+  mov [ecx+human0+human_punchdelay],punch_cooldown
+
+  mov ecx,[ebp+C]
+    cmp ecx,-1
+    je  cleanup
+  imul ecx,human_bonesize
+
+  mov ecx,[eax+human0+ecx+human_bone0]
+  imul ecx,rigidbodysize
+
+  // Knockback
+  push (float)punch_knockback
+
+  fld [edx+rigidbody0+rigidbody_vel+0]
+    fmul [esp]
+    fadd [ecx+rigidbody0+rigidbody_vel+0]
+  fstp [ecx+rigidbody0+rigidbody_vel+0]
+
+  fld [edx+rigidbody0+rigidbody_vel+4]
+    fmul [esp]
+    fadd [ecx+rigidbody0+rigidbody_vel+4]
+  fstp [ecx+rigidbody0+rigidbody_vel+4]
+
+  fld [edx+rigidbody0+rigidbody_vel+8]
+    fmul [esp]
+    fadd [ecx+rigidbody0+rigidbody_vel+8]
+  fstp [ecx+rigidbody0+rigidbody_vel+8]
+
+  add esp,4
+
+  // Damage particle
+  lea eax,[reycastresult+reycastresult_normal]
+  push eax
+  lea eax,[reycastresult]
+  push eax
+  push 1
+  push 0
+  call createevent_particle
+  add esp,10
+
+  jmp cleanup
+
+punch_dmg_skip:
+  fstp st(0)
+
+cleanup:
+  pop ebp
+
+  add esp,10
+
+  jmp subrosadedicated.exe+8DF2D
+
+"subrosadedicated.exe"+8DC4C:
+  jmp collision_check
+  nop 9
+
+return_collision_check:
+
+newmem+400:
+
+// esi = human
+hand_animation:
+  cmp [esi+human0+human_punchdelay],0
+  je  hand_animation2
+
+  dec [esi+human0+human_punchdelay]
+
+hand_animation2:
+  test [esi+human0+human_inputflag],800
+  je originalcode_hand_animation
+
+  mov eax,[esi+human0+human_slot0]
+  add eax,[esi+human0+human_slot1]
+  cmp eax,0
+  jne originalcode_hand_animation
+
+  test [esi+human0+human_inputflag],1
+  je lefthand
+
+  xor eax,eax
+  cmp eax,enable_descombulator
+  je skip_bothhands_check
+
+  test [esi+human0+human_inputflag],2
+  jne bothhand
+
+skip_bothhands_check:
+  // this modifies some values on stack for the function call
+  // [esp+10] Hand angle pointer???
+  // [esp+C] Position pointer
+  // [esp+8] bone id
+
+  cmp [esp+8],4
+  jne  lefthand
+
+  mov eax,[esp+10]
+	  mov [eax+0],(float)1.9
+  mov eax,[esp+C]
+	  mov [eax+4],(float)0.2
+	  mov [eax+8],(float)-1
+
+lefthand:
+  test [esi+human0+human_inputflag],2
+  je originalcode_hand_animation
+
+  cmp [esp+8],7
+  jne  originalcode_hand_animation
+
+  mov eax,[esp+10]
+	  mov [eax+0],(float)1.9
+  mov eax,[esp+C]
+	  mov [eax+4],(float)0.2
+	  mov [eax+8],(float)-1
+
+  jmp originalcode_hand_animation
+
+bothhand:
+  mov eax,[esp+10]
+	  mov [eax+0],(float)-180
+  mov eax,[esp+C]
+	  mov [eax+8],(float)-1
+
+originalcode_hand_animation:
+  call subrosadedicated.exe+553C0
+
+  jmp return_hand_animation
+
+"subrosadedicated.exe"+8D214:
+  jmp hand_animation
+
+return_hand_animation:
+
+newmem+550:
+
+// Hand will always be functional, even on red status
+hand_durability:
+  test [esi+human0+human_inputflag],800
+  je original_hand_durability
+
+  mov ecx,[esi+human0+human_slot0]
+  add ecx,[esi+human0+human_slot1]
+  cmp ecx,0
+  jne original_hand_durability
+
+  push (float)1
+  movss xmm3,[esp]
+  add esp,4
+
+  jmp return_hand_durability
+
+original_hand_durability:
+  movss xmm3,[subrosadedicated.exe+BF5C0]
+  jmp return_hand_durability
+
+"subrosadedicated.exe"+88943:
+  jmp hand_durability
+  nop 3
+
+return_hand_durability:
+
+"subrosadedicated.exe"+8CA22:
+  nop 2
+
+[DISABLE]
+
+"subrosadedicated.exe"+8DC4C:
+  cmp ebp,06
+  je subrosadedicated.exe+8DC5A
+  cmp ebp,09
+  jne subrosadedicated.exe+8DDDE
+
+"subrosadedicated.exe"+8D214:
+  call subrosadedicated.exe+553C0
+
+"subrosadedicated.exe"+88943:
+  movss xmm3,[subrosadedicated.exe+BF5C0]
+
+dealloc(newmem)
+
+"subrosadedicated.exe"+8CA22:
+  je subrosadedicated.exe+8CA30
+</AssemblerScript>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+</CheatTable>

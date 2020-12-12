@@ -1,0 +1,525 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="31">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>29</ID>
+      <Description>"Reset Round"</Description>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+
+define(game_state,subrosa.exe+CEA1C54)
+
+alloc(code,$1000)
+
+code:
+
+initialize:
+  mov [game_state],4
+  ret
+
+reset_round:
+  cmp [game_state],4
+  jne originalcode
+
+  mov [game_state],2
+  call subrosa.exe+4B66E
+
+originalcode:
+  cmp dword ptr [subrosa.exe+CEA1C54],02
+  jmp return
+
+"subrosa.exe"+3AA7F:
+  jmp reset_round
+  nop 2
+
+return:
+
+createThread(initialize)
+
+[DISABLE]
+
+"subrosa.exe"+3AA7F:
+  cmp dword ptr [subrosa.exe+CEA1C54],02
+
+dealloc(code)
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>26</ID>
+      <Description>"Game Mode"</Description>
+      <LastState Value="0" RealAddress="0D2A1C44"/>
+      <VariableType>4 Bytes</VariableType>
+      <Address>subrosa.exe+CEA1C44</Address>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>27</ID>
+      <Description>"Game State"</Description>
+      <LastState Value="2" RealAddress="0D2A1C54"/>
+      <VariableType>4 Bytes</VariableType>
+      <Address>subrosa.exe+CEA1C54</Address>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>55</ID>
+      <Description>"Timer"</Description>
+      <LastState Value="25200" RealAddress="0D2A1C58"/>
+      <VariableType>4 Bytes</VariableType>
+      <Address>subrosa.exe+CEA1C58</Address>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>36</ID>
+      <Description>"-- Scripts --"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Value="" RealAddress="00000000"/>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>35</ID>
+          <Description>"Spawn Car"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+
+define(color,B)
+define(type,4)
+
+define(game_state,subrosa.exe+CEA1C54)
+
+alloc(code,$1000)
+
+code:
+
+initialize:
+  mov [game_state],4
+  ret
+
+spawncar:
+  cmp [game_state],4
+  jne originalcode
+
+  mov [game_state],2
+
+  pushad
+
+    mov  eax,[subrosa.exe+1203BE80] // Get player data (clientside only)
+    imul eax,CAC
+
+    mov  ecx,[eax+subrosa.exe+98A2020] // Get player corpse
+    imul ecx,5A0
+
+    // Coordenates of the player, where the car will spawn
+    push [ecx+subrosa.exe+97EDF4C]
+    push [ecx+subrosa.exe+97EDF48]
+    push [ecx+subrosa.exe+97EDF44]
+    mov  esi,esp
+
+    // Angles, please don't change, it can cause unexpected behavior
+    push (float)1.0
+    push (float)0.0
+    push (float)0.0
+      push (float)0.0
+      push (float)1.0
+      push (float)0.0
+    push (float)0.0
+    push (float)0.0
+    push (float)1.0
+    mov  edi,esp
+
+    // Function Parameters
+    push color // Color
+    push edi   // Angles
+    push 00    // ???
+    push esi   // Coordenates
+    push type  // Type
+
+    // Function
+    call subrosa.exe+7098C
+    add  esp,14+30
+
+  popad
+
+originalcode:
+  cmp dword ptr [subrosa.exe+CEA1C54],02
+  jmp return
+
+"subrosa.exe"+3AA7F:
+  jmp spawncar
+  nop 2
+
+return:
+
+createThread(initialize)
+
+[DISABLE]
+
+"subrosa.exe"+3AA7F:
+  cmp dword ptr [subrosa.exe+CEA1C54],02
+
+dealloc(code)
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>50</ID>
+          <Description>"Spawn Item"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+
+define(item,1)
+define(slot,0)
+
+define(game_state,subrosa.exe+CEA1C54)
+
+alloc(code,$1000)
+
+code:
+
+initialize:
+  mov [game_state],4
+  ret
+
+spawnitem:
+  cmp [game_state],4
+  jne originalcode
+
+  mov [game_state],2
+
+  pushad
+
+    mov  edx,[subrosa.exe+1203BE80] // Get player data (clientside only)
+    imul edx,CAC
+
+    mov  ebx,[edx+subrosa.exe+98A2020] // Get player corpse
+    imul ebx,5A0
+
+    // Coordenates of the player, where the car will spawn
+    push [ebx+subrosa.exe+97EDF4C]
+    push [ebx+subrosa.exe+97EDF48]
+    push [ebx+subrosa.exe+97EDF44]
+    mov  esi,esp
+
+    // Angles, please don't change, it can cause unexpected behavior
+    push (float)1.0
+    push (float)0.0
+    push (float)0.0
+      push (float)0.0
+      push (float)1.0
+      push (float)0.0
+    push (float)0.0
+    push (float)0.0
+    push (float)1.0
+    mov  edi,esp
+
+    // Spawn function parameters
+    push edi  // Angles
+    push 00   // ???
+    push esi  // Coordenates
+    push item // Item
+
+    // Spawn function
+    call subrosa.exe+58B11
+    add  esp,10+30
+
+    // Give function parameters
+    push slot // Slot
+    push 4  // Player
+    push -01  // ???
+    push eax  // Item
+
+    // Give function
+    call subrosa.exe+58F81
+    add  esp,10
+
+  popad
+
+originalcode:
+  cmp dword ptr [subrosa.exe+CEA1C54],02
+  jmp return
+
+"subrosa.exe"+3AA7F:
+  jmp spawnitem
+  nop 2
+
+return:
+
+createThread(initialize)
+
+[DISABLE]
+
+"subrosa.exe"+3AA7F:
+  cmp dword ptr [subrosa.exe+CEA1C54],02
+
+dealloc(code)
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>51</ID>
+          <Description>"Respawn Players"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+
+define(game_state,subrosa.exe+CEA1C54)
+
+define(max_players,A)
+
+// Player
+define(p0,subrosa.exe+98A1FC0)
+define(ps,CAC)
+define(p_team,4C)
+define(p_h,60)
+
+alloc(code,$1000)
+
+code:
+
+initialize:
+  mov [game_state],4
+  ret
+
+spawnbot:
+  cmp [game_state],4
+  jne originalcode
+
+  mov [game_state],2
+
+  pushad
+
+    mov ecx,max_players
+    xor ebx,ebx
+    xor edx,edx
+    xor edi,edi
+
+init_loop:
+
+    cmp [p0+edx],0
+    je next_player
+
+    cmp [p0+p_h+edx],-1
+    jne next_player
+
+    //mov [p0+edx],1
+    //mov [p0+p_team+edx],0
+
+{    mov  eax,[subrosa.exe+1203BE80] // Get player data (clientside only)
+    imul eax,CAC
+
+    mov  eax,[eax+subrosa.exe+98A2020] // Get player corpse
+    imul eax,5A0
+
+    // Coordenates of the player, where the car will spawn
+    push [eax+subrosa.exe+97EDF4C]
+    push [eax+subrosa.exe+97EDF48]
+    push [eax+subrosa.exe+97EDF44]
+    mov  esi,esp}
+
+    pushad
+
+      push (float)60.70
+      push (float)4.82
+      push (float)68.00
+      mov  esi,esp
+
+      // Function Parameters
+      push ebx
+      push esi
+
+      // Function
+      call subrosa.exe+519BE
+      add  esp,8+C
+      mov [esp+1C],eax
+
+    popad
+
+    mov [p0+p_h+edx],eax
+
+next_player:
+    inc ebx
+    add edx,ps
+    dec ecx
+    cmp ecx,0
+    jg  init_loop
+
+  popad
+
+originalcode:
+  cmp dword ptr [subrosa.exe+CEA1C54],02
+  jmp return
+
+"subrosa.exe"+3AA7F:
+  jmp spawnbot
+  nop 2
+
+return:
+
+createThread(initialize)
+
+[DISABLE]
+
+"subrosa.exe"+3AA7F:
+  cmp dword ptr [subrosa.exe+CEA1C54],02
+
+dealloc(code)
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>52</ID>
+          <Description>"Spawn bots ( Sem IA )"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+
+define(game_state,subrosa.exe+CEA1C54)
+
+define(max_players,FF)
+
+// Player
+define(p0,subrosa.exe+98A1FC0)
+define(ps,CAC)
+define(p_team,4C)
+define(p_h,60)
+
+alloc(code,$1000)
+
+code:
+
+initialize:
+  mov [game_state],4
+  ret
+
+spawnbot:
+  cmp [game_state],4
+  jne originalcode
+
+  mov [game_state],2
+
+  pushad
+
+    mov ecx,max_players
+    xor ebx,ebx
+    xor edx,edx
+
+init_loop:
+
+    cmp [p0+p_h+edx],-1
+    jne next_player
+
+    mov [p0+edx],1
+
+    // IA
+    mov [edx+subrosa.exe+98A33B0],1
+
+    // Time
+    mov [p0+p_team+edx],1
+
+    mov [p0+94+edx],(float)1.0
+    mov [p0+2C+edx],-1
+
+    // Fix Face
+    mov [p0+BDC+edx],(float)0.05
+    mov [p0+BE0+edx],(float)0.05
+    mov [p0+BE4+edx],(float)-0.15
+    mov [p0+BE8+edx],(float)1.00
+    mov [p0+BEC+edx],(float)1.00
+    mov [p0+BF0+edx],(float)1.00
+    mov [p0+BF4+edx],(float)-0.05
+    mov [p0+BF8+edx],(float)0.05
+    mov [p0+BFC+edx],(float)-0.15
+    mov [p0+C00+edx],(float)1.00
+    mov [p0+C04+edx],(float)1.00
+    mov [p0+C08+edx],(float)1.00
+
+    pushad
+
+      mov  eax,[subrosa.exe+1203BE80] // Get player data (clientside only)
+      imul eax,CAC
+
+      mov  ecx,[eax+subrosa.exe+98A2020] // Get player corpse
+      imul ecx,5A0
+
+      // Coordenates of the player, where the car will spawn
+      push (float)4.0
+        fld  [esp]
+        fadd [ecx+subrosa.exe+97EDF4C]
+        fstp [esp]
+      push [ecx+subrosa.exe+97EDF48]
+      push [ecx+subrosa.exe+97EDF44]
+      mov  esi,esp
+
+      // Function Parameters
+      push ebx
+      push esi
+
+      // Function
+      call subrosa.exe+519BE
+      add  esp,8+C
+      mov [esp+1C],eax
+
+    popad
+
+    mov [p0+p_h+edx],eax
+
+    //push ebx
+    //call subrosa.exe+4783B
+    //add  esp,4
+
+    jmp originalcode_pop
+
+next_player:
+    inc ebx
+    add edx,ps
+    dec ecx
+    cmp ecx,0
+    jg  init_loop
+
+originalcode_pop:
+  popad
+
+originalcode:
+  cmp dword ptr [subrosa.exe+CEA1C54],02
+  jmp return
+
+"subrosa.exe"+3AA7F:
+  jmp spawnbot
+  nop 2
+
+return:
+
+createThread(initialize)
+
+[DISABLE]
+
+"subrosa.exe"+3AA7F:
+  cmp dword ptr [subrosa.exe+CEA1C54],02
+
+dealloc(code)
+</AssemblerScript>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>30</ID>
+      <Description>"-- Structs --"</Description>
+      <Options moHideChildren="1"/>
+      <LastState Value="" RealAddress="00000000"/>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>34</ID>
+          <Description>"Player Data"</Description>
+          <LastState Value="1" RealAddress="09CA2C6C"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>subrosa.exe+98A1FC0+CAC*1</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>32</ID>
+          <Description>"Corpse"</Description>
+          <LastState Value="0" RealAddress="09BF3920"/>
+          <VariableType>4 Bytes</VariableType>
+          <Address>subrosa.exe+97EDF20+5A0*10</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+</CheatTable>

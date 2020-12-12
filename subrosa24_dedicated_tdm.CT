@@ -1,0 +1,917 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="31">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>209</ID>
+      <Description>"Mata-mata de equipes"</Description>
+      <LastState/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+
+// Valores
+define(time,#18050)
+define(gun,subrosadedicated024d.exe+EDEA4E0)
+define(mags,subrosadedicated024d.exe+EDEA4E4)
+define(spawn_points,subrosadedicated024d.exe+EDEA4F4)
+define(death_counts,subrosadedicated024d.exe+EDEA4E8)
+define(death_team_count,subrosadedicated024d.exe+EDEA4DC)
+define(wep_roll,subrosadedicated024d.exe+EDEA4D8)
+
+// Funções
+define(arm_func,subrosadedicated024d.exe+28190)
+define(human_spawn_func,subrosadedicated024d.exe+50AE0)
+
+// Informações de modo
+define(game_mode,subrosadedicated024d.exe+90DC548)
+define(game_state,subrosadedicated024d.exe+90DC560)
+define(game_timer,subrosadedicated024d.exe+90DC564)
+define(game_restart,subrosadedicated024d.exe+761EAE0)
+
+//Jogador
+define(p0,subrosadedicated024d.exe+EDEDD00)
+define(p_team,64)
+define(p_h,78)
+define(ps,2408)
+
+//Corpo
+define(h0,subrosadedicated024d.exe+15CBF80)
+define(hs,2B64)
+define(h_p,8)
+define(h_pos,C8)
+define(h_ang,F8)
+
+define(max_players,#10)
+
+alloc(tdmfuncs,$1000)
+
+tdmfuncs:
+
+deathCheck_func:
+  xor ecx,ecx
+
+deathCheck_loop:
+  cmp [death_counts+ecx],0
+  jne deathCheck_next
+
+  inc [death_team_count]
+
+  mov [death_counts+ecx],-1
+
+deathCheck_next:
+  add ecx,4
+  cmp ecx,C
+  jl  deathCheck_loop
+
+teamDeathCheck:
+  cmp [death_team_count],1
+  jng deathCheck_ret
+
+  mov [game_timer],#100
+
+deathCheck_ret:
+  ret
+
+
+giveitem_func: //giveitem(human, type, slot)
+  mov ebx,[esp+4]
+  mov ecx,[esp+8]
+
+  imul ebx,2B64
+
+  lea eax,[h0+h_pos+ebx]
+  push eax
+  push 0
+  lea eax,[h0+h_ang+ebx]
+  push eax
+  push ecx
+  call subrosadedicated024d.exe+1B070
+  add esp,10
+
+  mov edx,[esp+C]
+
+  mov ebx,[esp+4]
+
+  push edx
+  push ebx
+  push -1
+  push eax
+  call subrosadedicated024d.exe+1B870
+  add esp,10
+
+  ret
+
+// ---- Isso só executa uma vez quando você ativa o script ------------
+
+initialize:
+  mov [game_restart],1
+  mov [game_mode],3
+
+  ret
+
+createThread(initialize)
+// --------------------------------------------------------------------
+
+tdmspawn:
+
+  pushad
+
+    mov [game_timer],time
+
+    mov ecx,max_players
+    xor edx,edx
+    xor ebx,ebx
+
+    cmp [wep_roll],0
+    je  init_players_loop
+
+    add [gun],2
+
+init_players_loop:
+
+    cmp [p0+ebx],0 // Evita spawnar players que sairam do servidor
+    je init_players_next
+
+    cmp [p0+p_team+ebx],6   // Bots
+    je init_players_next
+
+    cmp [p0+p_team+ebx],7   // Civis ( Espectadores )
+    je init_players_next
+
+    cmp [p0+p_h+ebx],-1     // Já spawnado
+    jne init_players_next
+
+    cmp [p0+2C+ebx],1
+    jne spawn_code
+
+    // Terno
+    mov [ebx+subrosadedicated024d.exe+EDF00C0],1
+    // Oculos
+    mov [ebx+subrosadedicated024d.exe+EDF00C4],1
+
+spawn_code:
+
+    // Angulo do spawn
+    lea ebp,[subrosadedicated024d.exe+60CD4]
+
+    // Cordenadas do spawn ( mude elas na sua cheat table )
+    mov eax,[p0+p_team+ebx]
+    imul eax,C
+    lea esi,[spawn_points+eax]
+
+    pushad
+
+      push edx  // ID do player ( Isso é para o nome dele aparecer )
+      push ebp  // Angulo
+      push esi  // Cordenadas
+      call human_spawn_func
+      add esp,C
+      mov [esp+1C],eax // Coisa do tony pergunta para ele
+
+    popad
+
+    mov [p0+p_h+ebx],eax // Isso da o controle do corpo ao jogador
+
+    pushad
+
+      push edx
+      call subrosadedicated024d.exe+64A0
+      add  esp,4
+
+    popad
+
+    // Dar armas
+    pushad
+
+      cmp [mags],7
+      jle weapon_roll_reset
+
+      mov [mags],7
+
+weapon_roll_reset:
+      cmp [gun],A
+      jle give_weapon
+
+      mov [gun],0
+
+give_weapon:
+      push [mags]
+      push [gun]
+      push eax
+      call arm_func
+      add  esp,C
+
+    popad
+
+    pushad
+
+      mov ecx,1
+
+bandage_loop:
+      push 6
+      push C
+      push eax
+      call giveitem_func
+      add  esp,C
+
+      dec ecx
+      cmp ecx,0
+      jg  bandage_loop
+
+    popad
+
+    mov eax,[p0+p_team+ebx]
+    imul eax,4
+
+    inc [death_counts+eax]
+
+init_players_next:
+
+    add ebx,ps
+    inc edx
+
+    dec ecx
+    cmp ecx,0
+    jg init_players_loop
+
+    cmp,[subrosadedicated024d.exe+761EAC4],2
+    jl  cleanup_spawncode
+
+cleanup_spawncode:
+  popad
+
+originalcode:
+  cmp [subrosadedicated024d.exe+90DC564],edx
+  jmp return
+
+"subrosadedicated024d.exe"+5B692:
+  jmp tdmspawn
+  nop
+
+return:
+
+tdmfuncs+300:
+
+handledeath:
+
+    cmp dword ptr [eax+subrosadedicated024d.exe+15CBFA8],0
+    jg  originalcode_handledeath
+
+    cmp dword ptr [eax+subrosadedicated024d.exe+15CBF88],-1
+    je  originalcode_handledeath
+
+  pushad
+
+      mov  edx,[eax+subrosadedicated024d.exe+15CBF88]
+      imul  ebx,edx,2408
+
+      mov [ebx+subrosadedicated024d.exe+EDEDD78],-1
+      mov [eax+subrosadedicated024d.exe+15CBF88],-1
+
+      // Descomente para fazer o corpo sumir junto
+      //mov [eax+subrosadedicated024d.exe+15CBFA4],0
+
+      // Update ( Necessario caso estiver fora do modo world )
+      push edx
+      call subrosadedicated024d.exe+64A0
+      add  esp,4
+
+      mov eax,[p0+p_team+ebx]
+      imul eax,4
+
+      dec [death_counts+eax]
+
+      call deathCheck_func
+
+  popad
+
+originalcode_handledeath:
+  cmp dword ptr [eax+subrosadedicated024d.exe+15CBFA8],0
+  jmp return_handledeath
+
+"subrosadedicated024d.exe"+4EED4:
+  jmp handledeath
+  nop 2
+
+return_handledeath:
+
+tdmfuncs+400:
+
+handledisconnect:
+
+  cmp [game_state],2
+  jne originalcode_handledisconnect
+
+  cmp [game_timer],#100
+  jle originalcode_handledisconnect
+
+  cmp [p0+p_h+esi],-1
+  je  only_death_check_disconnect
+
+  cmp [p0+p_team+esi],6
+  je  only_death_check_disconnect
+
+  cmp [p0+p_team+esi],7
+  je  only_death_check_disconnect
+
+  mov eax,[p0+p_team+esi]
+  imul eax,4
+
+  dec [death_counts+eax]
+
+only_death_check_disconnect:
+  call deathCheck_func
+
+originalcode_handledisconnect:
+  mov eax,[esi+subrosadedicated024d.exe+EDEDD78]
+  jmp return_handledisconnect
+
+"subrosadedicated024d.exe"+A257:
+  jmp handledisconnect
+  nop
+
+return_handledisconnect:
+
+tdmfuncs+500:
+
+handleconnect:
+
+  cmp [game_state],2
+  jne originalcode_handleconnect
+
+  cmp [game_timer],#100
+  jle originalcode_handleconnect
+
+  cmp [p0+p_h+esi],-1
+  je  only_death_check_connect
+
+  cmp [p0+p_team+esi],6
+  je  only_death_check_connect
+
+  cmp [p0+p_team+esi],7
+  je  only_death_check_connect
+
+  mov eax,[p0+p_team+esi]
+  imul eax,4
+
+  cmp [death_counts+eax],-1
+  jne increase_count
+
+  mov [death_counts+eax],1
+  dec [death_team_count]
+  jmp originalcode_handleconnect
+
+increase_count:
+  inc [death_counts+eax]
+
+only_death_check_connect:
+  call deathCheck_func
+
+originalcode_handleconnect:
+  mov edx,[ecx-00002B20]
+  jmp return_handleconnect
+
+"subrosadedicated024d.exe"+33D50:
+  jmp handleconnect
+  nop
+
+return_handleconnect:
+
+tdmfuncs+600:
+
+handleResetGame:
+  mov dword ptr [death_team_count],0
+  mov dword ptr [death_counts],0
+  mov dword ptr [death_counts+4],0
+  mov dword ptr [death_counts+8],0
+  mov dword ptr [game_restart],0
+  jmp return_handleResetGame
+
+"subrosadedicated024d.exe"+5C89F:
+  jmp handleResetGame
+  nop 5
+
+return_handleResetGame:
+
+tdmfuncs+700:
+
+handleRoundReset:
+  call subrosadedicated024d.exe+590F0
+  mov dword ptr [death_team_count],0
+  mov dword ptr [death_counts],0
+  mov dword ptr [death_counts+4],0
+  mov dword ptr [death_counts+8],0
+  mov dword ptr [game_restart],0
+  jmp return_handleRoundReset
+
+"subrosadedicated024d.exe"+5B994:
+  jmp handleRoundReset
+
+return_handleRoundReset:
+
+tdmfuncs+800:
+
+s_message:
+  db '%s matou %s' 00
+
+s_message_npc:
+  db '%s morreu por um NPC' 00
+
+s_message_npckill:
+  db '%s matou um NPC' 00
+
+s_message_suicide:
+  db '%s se matou' 00
+
+deathmessages:
+  sub [ebx+subrosadedicated024d.exe+15CBFA8],ebp
+
+  cmp dword ptr [ebx+subrosadedicated024d.exe+15CBFB8],0
+  je  check_in_vehicle
+  jmp continue
+
+check_in_vehicle:
+  cmp dword ptr [ebx+subrosadedicated024d.exe+15CBFA0],64
+  jne return_deathmessages
+
+continue:
+  cmp dword ptr [ebx+subrosadedicated024d.exe+15CBFA8],0
+  jg  return_deathmessages
+
+  pushad
+
+    mov  edi,[ebx+subrosadedicated024d.exe+15CBF88]
+    imul  ebx,edi,2408
+
+    mov edx,[esi+subrosadedicated024d.exe+1409BA8]
+
+    imul edx,2408
+
+    lea ecx,[edx+subrosadedicated024d.exe+EDEDD04]
+    lea eax,[ebx+subrosadedicated024d.exe+EDEDD04]
+
+    cmp [esi+subrosadedicated024d.exe+1409BA8],edi
+    je  playersuicide
+    cmp [ebx+subrosadedicated024d.exe+EDEDD04],00
+    je  playerkillednpc
+    cmp [edx+subrosadedicated024d.exe+EDEDD04],00
+    je  killedbynpc
+
+    push eax
+    push ecx
+    push s_message
+    push subrosadedicated024d.exe+61848
+    call msvcrt.sprintf
+    add  esp,10
+    jmp printmessage
+
+killedbynpc:
+    push eax
+    push s_message_npc
+    push subrosadedicated024d.exe+61848
+    call msvcrt.sprintf
+    add  esp,C
+    jmp printmessage
+
+playerkillednpc:
+    push ecx
+    push s_message_npckill
+    push subrosadedicated024d.exe+61848
+    call msvcrt.sprintf
+    add  esp,C
+    jmp printmessage
+
+playersuicide:
+    push ecx
+    push s_message_suicide
+    push subrosadedicated024d.exe+61848
+    call msvcrt.sprintf
+    add  esp,C
+
+printmessage:
+    push 00
+    push -1
+    push subrosadedicated024d.exe+61848
+    push 00
+    call subrosadedicated024d.exe+6260
+    add  esp,10
+
+  popad
+  jmp return_deathmessages
+
+"subrosadedicated024d.exe"+49409:
+  jmp deathmessages
+  nop
+
+return_deathmessages:
+
+"subrosadedicated024d.exe"+5AF57:
+  jmp subrosadedicated024d.exe+5B0AD
+  nop
+
+"subrosadedicated024d.exe"+5B877:
+  db 90 90 90 90 90 90
+
+"subrosadedicated024d.exe"+5B1BD:
+  db 00 00 00
+
+"subrosadedicated024d.exe"+5B1CC:
+  db 00 00 00
+
+registerSymbol(tdmfuncs)
+
+[DISABLE]
+
+"subrosadedicated024d.exe"+5AF57:
+  jne subrosadedicated024d.exe+5B0AD
+
+"subrosadedicated024d.exe"+5B877:
+  mov [subrosadedicated024d.exe+90DC564],ebx
+
+"subrosadedicated024d.exe"+5B1BD:
+  db 07 00 00
+
+"subrosadedicated024d.exe"+5B1CC:
+  db 07 00 00
+
+"subrosadedicated024d.exe"+5B994:
+  call subrosadedicated024d.exe+590F0
+
+"subrosadedicated024d.exe"+33D50:
+  mov edx,[ecx-00002B20]
+
+"subrosadedicated024d.exe"+A257:
+  mov eax,[esi+subrosadedicated024d.exe+EDEDD78]
+
+"subrosadedicated024d.exe"+4EED4:
+  cmp dword ptr [eax+subrosadedicated024d.exe+15CBFA8],-05
+
+"subrosadedicated024d.exe"+5B692:
+  mov [subrosadedicated024d.exe+90DC564],edx
+
+"subrosadedicated024d.exe"+5C89F:
+  mov [subrosadedicated024d.exe+761EAE0],00000000
+
+"subrosadedicated024d.exe"+49409:
+  sub [ebx+subrosadedicated024d.exe+15CBFA8],ebp
+
+unregisterSymbol(tdmfuncs)
+dealloc(tdmfuncs)
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>199</ID>
+          <Description>"Desativar Goldmen"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+
+subrosadedicated024d.exe+55A8B:
+  db 90 90 90 90 90 90 90 90 90 90
+
+[DISABLE]
+
+subrosadedicated024d.exe+55A8B:
+  mov [ebx+subrosadedicated024d.exe+EDEDD64],00000000
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>215</ID>
+          <Description>"Desativar OXS"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+
+"subrosadedicated024d.exe"+55AE5:
+  db 90 90 90 90 90 90 90 90 90 90
+
+[DISABLE]
+
+"subrosadedicated024d.exe"+55AE5:
+  mov [ebx+subrosadedicated024d.exe+EDEDD64],00000002
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>216</ID>
+          <Description>"Desativar Monsota"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+
+"subrosadedicated024d.exe"+55AC3:
+  db 90 90 90 90 90 90
+
+[DISABLE]
+
+"subrosadedicated024d.exe"+55AC3:
+  mov [ebx+subrosadedicated024d.exe+EDEDD64],eax
+
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>192</ID>
+          <Description>"Template ( Parque )"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+
+subrosadedicated024d.exe+90DC568: // Round Start Timer
+  dd #1550
+
+subrosadedicated024d.exe+90DC574: // Round End Timer
+  dd #650
+
+subrosadedicated024d.exe+EDEA4E0: // Gun
+  db 2
+
+subrosadedicated024d.exe+EDEA4E4: // Mags
+  db 7
+
+subrosadedicated024d.exe+EDEA514: // OXS Z
+  dd (float)822.20
+
+subrosadedicated024d.exe+EDEA510: // OXS Y
+  dd (float)26
+
+subrosadedicated024d.exe+EDEA50C: // OXS X
+  dd (float)695.72
+
+subrosadedicated024d.exe+EDEA508: // Monsota Z
+  dd (float)1067.99
+
+subrosadedicated024d.exe+EDEA504: // Monsota Y
+  dd (float)26
+
+subrosadedicated024d.exe+EDEA500: // Monsota X
+  dd (float)703.78
+
+subrosadedicated024d.exe+EDEA4FC: // Goldmen Z
+  dd (float)960.05
+
+subrosadedicated024d.exe+EDEA4F8: // Goldmen Y
+  dd (float)26
+
+subrosadedicated024d.exe+EDEA4F4: // Goldmen X
+  dd (float)703.99
+
+[DISABLE]
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>193</ID>
+          <Description>"Template 2 ( Predio preto )"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+
+subrosadedicated024d.exe+90DC568: // Round Start Timer
+  dd #1550
+
+subrosadedicated024d.exe+90DC574: // Round End Timer
+  dd #650
+
+subrosadedicated024d.exe+EDEA4E0: // Gun
+  db 0
+
+subrosadedicated024d.exe+EDEA4E4: // Mags
+  db 7
+
+subrosadedicated024d.exe+EDEA514: // OXS Z
+  dd (float)732.24
+
+subrosadedicated024d.exe+EDEA510: // OXS Y
+  dd (float)185.27
+
+subrosadedicated024d.exe+EDEA50C: // OXS X
+  dd (float)702.41
+
+subrosadedicated024d.exe+EDEA508: // Monsota Z
+  dd (float)732.24
+
+subrosadedicated024d.exe+EDEA504: // Monsota Y
+  dd (float)181.27
+
+subrosadedicated024d.exe+EDEA500: // Monsota X
+  dd (float)702.41
+
+subrosadedicated024d.exe+EDEA4FC: // Goldmen Z
+  dd (float)732.24
+
+subrosadedicated024d.exe+EDEA4F8: // Goldmen Y
+  dd (float)177.27
+
+subrosadedicated024d.exe+EDEA4F4: // Goldmen X
+  dd (float)702.41
+
+[DISABLE]
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>200</ID>
+          <Description>"Template 3 ( Hospital )"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+
+subrosadedicated024d.exe+90DC568: // Round Start Timer
+  dd #1550
+
+subrosadedicated024d.exe+90DC574: // Round End Timer
+  dd #650
+
+subrosadedicated024d.exe+EDEA4E0: // Gun
+  db 2
+
+subrosadedicated024d.exe+EDEA4E4: // Mags
+  db 7
+
+subrosadedicated024d.exe+EDEA514: // OXS Z
+  dd (float)797.89
+
+subrosadedicated024d.exe+EDEA510: // OXS Y
+  dd (float)37.27
+
+subrosadedicated024d.exe+EDEA50C: // OXS X
+  dd (float)828.34
+
+subrosadedicated024d.exe+EDEA508: // Monsota Z
+  dd (float)739.89
+
+subrosadedicated024d.exe+EDEA504: // Monsota Y
+  dd (float)37.27
+
+subrosadedicated024d.exe+EDEA500: // Monsota X
+  dd (float)833.17
+
+subrosadedicated024d.exe+EDEA4FC: // Goldmen Z
+  dd (float)767.38
+
+subrosadedicated024d.exe+EDEA4F8: // Goldmen Y
+  dd (float)25.02
+
+subrosadedicated024d.exe+EDEA4F4: // Goldmen X
+  dd (float)835.30
+
+[DISABLE]
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>228</ID>
+          <Description>"Template 4 ( TDM Barraca )"</Description>
+          <LastState/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+
+subrosadedicated024d.exe+90DC568: // Round Start Timer
+  dd #1550
+
+subrosadedicated024d.exe+90DC574: // Round End Timer
+  dd #650
+
+subrosadedicated024d.exe+EDEA4E0: // Gun
+  db 2
+
+subrosadedicated024d.exe+EDEA4E4: // Mags
+  db 7
+
+subrosadedicated024d.exe+EDEA514: // OXS Z
+  dd (float)526.74
+
+subrosadedicated024d.exe+EDEA510: // OXS Y
+  dd (float)30
+
+subrosadedicated024d.exe+EDEA50C: // OXS X
+  dd (float)1533.21
+
+subrosadedicated024d.exe+EDEA508: // Monsota Z
+  dd (float)898.56
+
+subrosadedicated024d.exe+EDEA504: // Monsota Y
+  dd (float)30
+
+subrosadedicated024d.exe+EDEA500: // Monsota X
+  dd (float)1369.75
+
+subrosadedicated024d.exe+EDEA4FC: // Goldmen Z
+  dd (float)721.59
+
+subrosadedicated024d.exe+EDEA4F8: // Goldmen Y
+  dd (float)30
+
+subrosadedicated024d.exe+EDEA4F4: // Goldmen X
+  dd (float)1661.59
+
+[DISABLE]
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>213</ID>
+          <Description>"Config"</Description>
+          <Options moHideChildren="1"/>
+          <LastState Value="" RealAddress="00000000"/>
+          <GroupHeader>1</GroupHeader>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>218</ID>
+              <Description>"Roleta de armas?"</Description>
+              <LastState Value="0" RealAddress="1016A4D8"/>
+              <VariableType>4 Bytes</VariableType>
+              <Address>subrosadedicated024d.exe+EDEA4D8</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>217</ID>
+              <Description>"Tempo para iniciar a partida"</Description>
+              <LastState Value="3600" RealAddress="0A45C568"/>
+              <VariableType>4 Bytes</VariableType>
+              <Address>subrosadedicated024d.exe+90DC568</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>214</ID>
+              <Description>"Tempo de final de partida"</Description>
+              <LastState Value="1260" RealAddress="0A45C574"/>
+              <VariableType>4 Bytes</VariableType>
+              <Address>subrosadedicated024d.exe+90DC574</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>180</ID>
+              <Description>"Arma"</Description>
+              <LastState Value="0" RealAddress="1016A4E0"/>
+              <VariableType>4 Bytes</VariableType>
+              <Address>subrosadedicated024d.exe+EDEA4E0</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>191</ID>
+              <Description>"Carregadores"</Description>
+              <LastState Value="0" RealAddress="1016A4E4"/>
+              <VariableType>4 Bytes</VariableType>
+              <Address>subrosadedicated024d.exe+EDEA4E4</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>182</ID>
+              <Description>"Goldmen Z"</Description>
+              <LastState Value="0" RealAddress="1016A4FC"/>
+              <VariableType>Float</VariableType>
+              <Address>subrosadedicated024d.exe+EDEA4FC</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>181</ID>
+              <Description>"Goldmen Y"</Description>
+              <LastState Value="0" RealAddress="1016A4F8"/>
+              <VariableType>Float</VariableType>
+              <Address>subrosadedicated024d.exe+EDEA4F8</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>184</ID>
+              <Description>"Goldmen X"</Description>
+              <LastState Value="0" RealAddress="1016A4F4"/>
+              <VariableType>Float</VariableType>
+              <Address>subrosadedicated024d.exe+EDEA4F4</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>189</ID>
+              <Description>"OXS Z"</Description>
+              <LastState Value="0" RealAddress="1016A514"/>
+              <VariableType>Float</VariableType>
+              <Address>subrosadedicated024d.exe+EDEA514</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>188</ID>
+              <Description>"OXS Y"</Description>
+              <LastState Value="0" RealAddress="1016A510"/>
+              <VariableType>Float</VariableType>
+              <Address>subrosadedicated024d.exe+EDEA510</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>187</ID>
+              <Description>"OXS X"</Description>
+              <LastState Value="0" RealAddress="1016A50C"/>
+              <VariableType>Float</VariableType>
+              <Address>subrosadedicated024d.exe+EDEA50C</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>183</ID>
+              <Description>"Monsota X"</Description>
+              <LastState Value="0" RealAddress="1016A500"/>
+              <VariableType>Float</VariableType>
+              <Address>subrosadedicated024d.exe+EDEA500</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>185</ID>
+              <Description>"Monsota Y"</Description>
+              <LastState Value="0" RealAddress="1016A504"/>
+              <VariableType>Float</VariableType>
+              <Address>subrosadedicated024d.exe+EDEA504</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>186</ID>
+              <Description>"Monsota Z"</Description>
+              <LastState Value="0" RealAddress="1016A508"/>
+              <VariableType>Float</VariableType>
+              <Address>subrosadedicated024d.exe+EDEA508</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+</CheatTable>
