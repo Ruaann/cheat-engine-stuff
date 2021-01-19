@@ -3,25 +3,25 @@
   <CheatEntries>
     <CheatEntry>
       <ID>240</ID>
-      <Description>"-- Administração --"</Description>
+      <Description>"-- Server --"</Description>
       <LastState Value="" RealAddress="00000000"/>
       <GroupHeader>1</GroupHeader>
       <CheatEntries>
         <CheatEntry>
           <ID>168</ID>
-          <Description>"Máximo de jogadores"</Description>
+          <Description>"Max Players"</Description>
           <VariableType>Byte</VariableType>
           <Address>subrosadedicated024d.exe+761EABC</Address>
         </CheatEntry>
         <CheatEntry>
           <ID>147</ID>
-          <Description>"Reiniciar jogo"</Description>
+          <Description>"Restart Game"</Description>
           <VariableType>4 Bytes</VariableType>
           <Address>subrosadedicated024d.exe+761EAE0</Address>
         </CheatEntry>
         <CheatEntry>
           <ID>159</ID>
-          <Description>"Quantidade de NPC"</Description>
+          <Description>"NPC Quantity"</Description>
           <VariableType>Byte</VariableType>
           <Address>subrosadedicated024d.exe+5BAEA</Address>
         </CheatEntry>
@@ -34,43 +34,8 @@
       <GroupHeader>1</GroupHeader>
       <CheatEntries>
         <CheatEntry>
-          <ID>268</ID>
-          <Description>"Carros quebrados despawnam"</Description>
-          <LastState/>
-          <VariableType>Auto Assembler Script</VariableType>
-          <AssemblerScript>[ENABLE]
-alloc(newmem,$1000)
-
-newmem:
-
-code:
-
-  fst dword ptr [esi+subrosadedicated024d.exe+5598450]
-
-  cmp [esi+subrosadedicated024d.exe+559261C],FFFF
-  jl  return
-
-  mov [esi+subrosadedicated024d.exe+559261C],#18000
-
-  jmp return
-
-"subrosadedicated024d.exe"+277FA:
-  jmp code
-  nop
-
-return:
-
-[DISABLE]
-
-"subrosadedicated024d.exe"+277FA:
-  fst dword ptr [esi+subrosadedicated024d.exe+5598450]
-
-dealloc(newmem)
-</AssemblerScript>
-        </CheatEntry>
-        <CheatEntry>
           <ID>262</ID>
-          <Description>"Area segura no spawn"</Description>
+          <Description>"Safe zone in spawn"</Description>
           <LastState/>
           <VariableType>Auto Assembler Script</VariableType>
           <AssemblerScript>[ENABLE]
@@ -222,7 +187,7 @@ dealloc(newmem)
         </CheatEntry>
         <CheatEntry>
           <ID>258</ID>
-          <Description>"Estado critico com pouca vida"</Description>
+          <Description>"Wounded state on low health"</Description>
           <LastState/>
           <VariableType>Auto Assembler Script</VariableType>
           <AssemblerScript>[ENABLE]
@@ -309,14 +274,14 @@ cmp dword ptr [esi+subrosadedicated024d.exe+15CBFA8],0
         </CheatEntry>
         <CheatEntry>
           <ID>257</ID>
-          <Description>"Corrigir exploit de spawn protection"</Description>
+          <Description>"Fix spawn protection exploit"</Description>
           <LastState/>
           <VariableType>Auto Assembler Script</VariableType>
           <AssemblerScript>[ENABLE]
 alloc(newmem,$1000)
 
 // Constants
-define(MAX_VELOCITY_TO_KILL,0.02)
+define(MAX_VELOCITY_TO_KILL,0.2)
 
 // Vehicle Struct
 define(vehicle0,subrosadedicated024d.exe+5592600)
@@ -325,57 +290,27 @@ define(vehicle0,subrosadedicated024d.exe+5592600)
 
 newmem:
 
-lenght:
-
-  fld  [esp+4]
-  fmul [esp+4]
-  fstp [esp+4]
-
-  fld  [esp+8]
-  fmul [esp+8]
-  fstp [esp+8]
-
-  fld  [esp+C]
-  fmul [esp+C]
-  fstp [esp+C]
-
-  fld  [esp+4]
-  fadd [esp+8]
-  fadd [esp+C]
-  fstp [esp+4]
-
-  mov eax,[esp+4]
-{
-  push eax
-  call msvcrt.sqrt
-  add esp,4
-
-  mov eax,[esp+4]
-
-  mov [subrosadedicated024d.exe+618C0],eax
-}
-  ret
-
 code:
-
   mov ecx,eax
 
   mov eax,[esp+C]
 
-  push ecx
-  push ebx
+  fld [eax+vehicle0+vehicle_velocity+0]
+    fmul st(0)
+    fld [eax+vehicle0+vehicle_velocity+4]
+      fmul st(0)
+      fld [eax+vehicle0+vehicle_velocity+8]
+        fmul st(0)
+      faddp
+    faddp
+    fsqrt
 
-  push [eax+vehicle0+vehicle_velocity+0]
-  push [eax+vehicle0+vehicle_velocity+4]
-  push [eax+vehicle0+vehicle_velocity+8]
-  call lenght
-  add esp,C
-
-  pop ebx
-  pop ecx
-
-  cmp eax,(float)MAX_VELOCITY_TO_KILL
-  jl  return
+  push (float)MAX_VELOCITY_TO_KILL
+  fld [esp]
+  add esp,4
+  fcomip st(1)
+  fstp st(0)
+  ja return
 
 originalcode:
   push 69 //64
@@ -387,6 +322,7 @@ originalcode:
 "subrosadedicated024d.exe"+52C01:
   jmp code
   nop 6
+
 return:
 
 [DISABLE]
@@ -402,7 +338,7 @@ dealloc(newmem)
         </CheatEntry>
         <CheatEntry>
           <ID>256</ID>
-          <Description>"Clunky Ragdolls"</Description>
+          <Description>"Retarded Ragdolls"</Description>
           <LastState/>
           <VariableType>Auto Assembler Script</VariableType>
           <AssemblerScript>[ENABLE]
@@ -418,7 +354,7 @@ dealloc(newmem)
         </CheatEntry>
         <CheatEntry>
           <ID>208</ID>
-          <Description>"Bots mais agressivos"</Description>
+          <Description>"Enhanced bots"</Description>
           <LastState/>
           <VariableType>Auto Assembler Script</VariableType>
           <AssemblerScript>[ENABLE]
@@ -479,7 +415,7 @@ dealloc(newmem)
         </CheatEntry>
         <CheatEntry>
           <ID>236</ID>
-          <Description>"Ejetar do carro"</Description>
+          <Description>"Eject from car on impact"</Description>
           <LastState/>
           <VariableType>Auto Assembler Script</VariableType>
           <AssemblerScript>[ENABLE]
@@ -564,7 +500,7 @@ dealloc(newmem)
         </CheatEntry>
         <CheatEntry>
           <ID>237</ID>
-          <Description>"Spawnar na concessionaria"</Description>
+          <Description>"Spawn in car shop"</Description>
           <LastState/>
           <VariableType>Auto Assembler Script</VariableType>
           <AssemblerScript>[ENABLE]
@@ -618,7 +554,7 @@ define(y,655)
         </CheatEntry>
         <CheatEntry>
           <ID>238</ID>
-          <Description>"Caminhão na concessionaria"</Description>
+          <Description>"Truck on car shop"</Description>
           <LastState/>
           <VariableType>Auto Assembler Script</VariableType>
           <AssemblerScript>[ENABLE]
@@ -668,7 +604,7 @@ dealloc(newmem)
         </CheatEntry>
         <CheatEntry>
           <ID>242</ID>
-          <Description>"Mensagens de Morte + Morte instantânea"</Description>
+          <Description>"Kill-Feed + Insta-death"</Description>
           <LastState/>
           <VariableType>Auto Assembler Script</VariableType>
           <AssemblerScript>[ENABLE]
@@ -1125,7 +1061,7 @@ dealloc(newmem)
           <CheatEntries>
             <CheatEntry>
               <ID>243</ID>
-              <Description>"Somente morte instantânea"</Description>
+              <Description>"Only insta-death"</Description>
               <LastState/>
               <VariableType>Auto Assembler Script</VariableType>
               <AssemblerScript>[ENABLE]
@@ -1205,7 +1141,7 @@ dealloc(newmem)
             </CheatEntry>
             <CheatEntry>
               <ID>248</ID>
-              <Description>"Somente mensagens de morte"</Description>
+              <Description>"Only Kill-Feed"</Description>
               <LastState/>
               <VariableType>Auto Assembler Script</VariableType>
               <AssemblerScript>[ENABLE]
